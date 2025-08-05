@@ -116,6 +116,70 @@ Always aim to be empathetic, human-like, and responsive in your conversation.`;
 };
 
 // Update the getAIResponse function to not add duplicate user message
+export const getAIResponse = async (
+  userMessage: string,
+  messageHistory: any[],
+): Promise<string> => {
+  try {
+    console.log('Sending request to OpenAI API...');
+    const API_KEY =
+      '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';
+    const API_URL = 'https://api.openai.com/v1/chat/completions';
+
+    const systemMessage = await buildSystemMessage();
+    console.log('System message built:', systemMessage);
+
+    // Create final messages array with system prompt and message history
+    // The user message is already included in messageHistory
+    const messages = [
+      { role: 'system', content: systemMessage },
+      ...messageHistory,
+    ];
+
+    console.log('Sending messages to OpenAI:', JSON.stringify(messages));
+
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages,
+        temperature: 0.7,
+        max_tokens: 150,
+      }),
+    });
+
+    const data = await response.json();
+    console.log('OpenAI API response:', JSON.stringify(data));
+
+    if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message.content.trim();
+    } else {
+      console.error('No choices in API response:', data);
+      throw new Error('No response generated');
+    }
+  } catch (error) {
+    console.error('Error getting AI response:', error);
+
+    // Check for specific error types with human-like responses
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      return "Oops! 😅 Looks like I'm having trouble connecting to my brain at the moment. Could you try again in a bit? Sometimes even AI needs a moment to reconnect!";
+    } else if (error instanceof SyntaxError) {
+      return 'Hmm, something got scrambled in my thinking process! 🤔 My apologies for the confusion. Could we try that conversation again?';
+    } else if (
+      error instanceof Error &&
+      error.message === 'No response generated'
+    ) {
+      return 'Oh! I was just about to say something clever but lost my train of thought! 😊 Could you repeat that for me?';
+    }
+
+    // Generic error
+    return "Well that's embarrassing... 😳 I seem to be having a little technical hiccup. Let's try again, shall we? I promise I'm usually more helpful!";
+  }
+};
 
 // Generate a simulated response based on user preferences (for development without API calls)
 export const getSimulatedResponse = async (
