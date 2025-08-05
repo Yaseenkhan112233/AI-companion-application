@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "191123860425",
+    "project_id": "ai-companion-b8861",
+    "storage_bucket": "ai-companion-b8861.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:191123860425:android:a0ed37a04ce358bfeb9618",
+        "android_client_info": {
+          "package_name": "com.aicompanionapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "191123860425-al596g6e2jj73v4um1tb43cjpmrmma0q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aicompanionapp",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "191123860425-of562ahgj7omb28vpq4b3rm7fdairs98.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmkpE5vjxP92S94s75EeZ-odRLfqO6OzI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "191123860425-of562ahgj7omb28vpq4b3rm7fdairs98.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

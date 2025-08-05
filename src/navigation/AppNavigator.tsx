@@ -9,6 +9,7 @@ import {
   HomeScreen,
   ProfileSettingsScreen,
 } from '../screens';
+import SignUpScreen from '../screens/SignupScreen/SignupScreen';
 
 export type RootStackParamList = {
   Onboarding: undefined;
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   Home: undefined;
   Main: undefined;
   ProfileSettings: undefined;
+  SignUp: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -36,6 +38,7 @@ export const AppNavigator = () => {
           name="ProfileSettings"
           component={ProfileSettingsScreen}
         />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
