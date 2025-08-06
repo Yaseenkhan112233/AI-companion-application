@@ -1,3 +1,4 @@
+
 // import React from 'react';
 // import {
 //   StyleSheet,
@@ -8,8 +9,11 @@
 //   Dimensions,
 //   Animated,
 //   Pressable,
+//   Alert,
 // } from 'react-native';
 // import Icon from 'react-native-vector-icons/MaterialIcons';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { GoogleSignin } from '@react-native-google-signin/google-signin';
 // import { colors, spacing, typography } from '../../theme';
 
 // interface DrawerProps {
@@ -51,9 +55,87 @@
 //   };
 
 //   const handleLogout = () => {
-//     onClose();
-//     // Add logout logic here
-//     console.log('Logging out');
+//     Alert.alert(
+//       'Logout',
+//       'Are you sure you want to logout?',
+//       [
+//         {
+//           text: 'Cancel',
+//           style: 'cancel',
+//         },
+//         {
+//           text: 'Logout',
+//           style: 'destructive',
+//           onPress: performLogout,
+//         },
+//       ],
+//       { cancelable: true },
+//     );
+//   };
+
+//   const performLogout = async () => {
+//     try {
+//       // Close the drawer first
+//       onClose();
+
+//       // Check if user is signed in with Google and sign out
+//       const isSignedIn = await GoogleSignin.isSignedIn();
+//       if (isSignedIn) {
+//         await GoogleSignin.signOut();
+//         console.log('Google sign out successful');
+//       }
+
+//       // Clear all stored user data
+//       await AsyncStorage.multiRemove([
+//         'userToken',
+//         'refreshToken',
+//         'userData',
+//         'isLoggedIn',
+//         'userSession',
+//         'googleUserInfo',
+//         'user_data',
+//         // Add any other keys you use for user data
+//       ]);
+
+//       // Reset navigation stack and navigate back to SignIn screen
+//       navigation.reset({
+//         index: 0,
+//         routes: [{ name: 'SignIn' }], // Navigate back to your SignInScreen
+//       });
+
+//       // Optional: Show success message
+//       setTimeout(() => {
+//         Alert.alert('Success', 'You have been logged out successfully.');
+//       }, 500);
+//     } catch (error) {
+//       console.error('Logout error:', error);
+
+//       // Even if Google sign out fails, still clear local data and navigate
+//       try {
+//         await AsyncStorage.multiRemove([
+//           'userToken',
+//           'refreshToken',
+//           'userData',
+//           'isLoggedIn',
+//           'userSession',
+//           'googleUserInfo',
+//           'user_data',
+//         ]);
+
+//         navigation.reset({
+//           index: 0,
+//           routes: [{ name: 'SignIn' }],
+//         });
+
+//         Alert.alert(
+//           'Logged Out',
+//           'You have been logged out (with some cleanup issues).',
+//         );
+//       } catch (clearError) {
+//         console.error('Failed to clear data:', clearError);
+//         Alert.alert('Error', 'Failed to logout completely. Please try again.');
+//       }
+//     }
 //   };
 
 //   if (!isOpen) return null;
@@ -206,6 +288,8 @@
 //   },
 // });
 
+
+
 import React from 'react';
 import {
   StyleSheet,
@@ -285,11 +369,16 @@ export const CustomDrawer = ({
       // Close the drawer first
       onClose();
 
-      // Check if user is signed in with Google and sign out
-      const isSignedIn = await GoogleSignin.isSignedIn();
-      if (isSignedIn) {
-        await GoogleSignin.signOut();
-        console.log('Google sign out successful');
+      // Try to sign out from Google
+      try {
+        const userInfo = await GoogleSignin.getCurrentUser();
+        if (userInfo) {
+          await GoogleSignin.signOut();
+          console.log('Google sign out successful');
+        }
+      } catch (googleError) {
+        // If user is not signed in with Google, this will fail silently
+        console.log('No Google user signed in or error signing out:', googleError);
       }
 
       // Clear all stored user data
@@ -311,9 +400,7 @@ export const CustomDrawer = ({
       });
 
       // Optional: Show success message
-      setTimeout(() => {
-        Alert.alert('Success', 'You have been logged out successfully.');
-      }, 500);
+     
     } catch (error) {
       console.error('Logout error:', error);
 
@@ -494,3 +581,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,33 +11,42 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import {
+  GoogleSignin,
+  statusCodes,
+  User,
+} from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
 import { GradientBackground } from '../../components/GradientBackground';
 import { colors } from '../../theme';
 import { useNavigation } from '@react-navigation/native';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { GoogleAuthProvider } from '@react-native-firebase/auth';
 
 const SignUpScreen = () => {
   const navigation = useNavigation();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentGoogleUser, setCurrentGoogleUser] = useState<User | null>(null);
+
+
 
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword) {
       return Alert.alert('Error', 'All fields are required.');
     }
-
     if (password !== confirmPassword) {
       return Alert.alert('Error', 'Passwords do not match.');
     }
 
     try {
       await auth().createUserWithEmailAndPassword(email, password);
-      Alert.alert('Success', 'Account created successfully!');
-      navigation.navigate('SignIn' as never); // navigate to SignIn screen
+      Alert.alert('Success', 'Account created!', [
+        { text: 'OK', onPress: () => navigation.navigate('SignIn') },
+      ]);
     } catch (error: any) {
-      Alert.alert('Sign Up Error', error.message);
+      Alert.alert('Sign Up Failed', error.message || 'Something went wrong');
     }
   };
 
@@ -49,29 +59,35 @@ const SignUpScreen = () => {
         <ScrollView contentContainerStyle={styles.innerContainer}>
           <Text style={styles.heading}>Create Account</Text>
 
+         
+
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>Or create with email</Text>
+            <View style={styles.divider} />
+          </View>
+
           <TextInput
             style={styles.input}
             placeholder="Email"
-            placeholderTextColor="#ccc"
+            placeholderTextColor="rgba(255,255,255,0.7)"
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
             onChangeText={setEmail}
           />
-
           <TextInput
             style={styles.input}
             placeholder="Password"
-            placeholderTextColor="#ccc"
+            placeholderTextColor="rgba(255,255,255,0.7)"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
           />
-
           <TextInput
             style={styles.input}
             placeholder="Confirm Password"
-            placeholderTextColor="#ccc"
+            placeholderTextColor="rgba(255,255,255,0.7)"
             secureTextEntry
             value={confirmPassword}
             onChangeText={setConfirmPassword}
@@ -81,12 +97,8 @@ const SignUpScreen = () => {
             <Text style={styles.buttonText}>Sign Up</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => navigation.navigate('SignIn' as never)}
-          >
-            <Text style={styles.switchText}>
-              Already have an account? Sign In
-            </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
+            <Text style={styles.switchText}>Already have an account? Sign In</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -111,7 +123,62 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
+  },
+  googleSection: {
+    marginBottom: 20,
+  },
+  googleButton: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  googleButtonText: {
+    marginLeft: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  currentAccountInfo: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  currentAccountText: {
+    color: '#fff',
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  changeAccountButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  changeAccountText: {
+    color: '#fff',
+    fontSize: 12,
+    textDecorationLine: 'underline',
+    fontWeight: '600',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  dividerText: {
+    color: '#fff',
+    marginHorizontal: 16,
+    fontSize: 14,
   },
   input: {
     backgroundColor: 'rgba(255,255,255,0.1)',
@@ -121,6 +188,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 16,
     color: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   button: {
     backgroundColor: colors.primary,
@@ -141,3 +210,4 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 });
+

@@ -1,3 +1,5 @@
+
+
 // Utility functions for interacting with the OpenAI API
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -115,22 +117,22 @@ Always aim to be empathetic, human-like, and responsive in your conversation.`;
   }
 };
 
-// Update the getAIResponse function to not add duplicate user message
+// Updated getAIResponse function with better error handling and debugging
 export const getAIResponse = async (
   userMessage: string,
   messageHistory: any[],
 ): Promise<string> => {
   try {
     console.log('Sending request to OpenAI API...');
-    const API_KEY =
-      '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';
+    
+    // IMPORTANT: Replace this with your actual API key
+    const API_KEY = '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'; // Replace with your real key
     const API_URL = 'https://api.openai.com/v1/chat/completions';
 
     const systemMessage = await buildSystemMessage();
     console.log('System message built:', systemMessage);
 
     // Create final messages array with system prompt and message history
-    // The user message is already included in messageHistory
     const messages = [
       { role: 'system', content: systemMessage },
       ...messageHistory,
@@ -152,31 +154,86 @@ export const getAIResponse = async (
       }),
     });
 
-    const data = await response.json();
-    console.log('OpenAI API response:', JSON.stringify(data));
-
-    if (data.choices && data.choices.length > 0) {
-      return data.choices[0].message.content.trim();
-    } else {
-      console.error('No choices in API response:', data);
-      throw new Error('No response generated');
+    // Check if the HTTP response is ok
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('HTTP Error:', response.status, response.statusText);
+      console.error('Error response body:', errorText);
+      
+      // Parse error details if possible
+      let errorDetails = '';
+      try {
+        const errorData = JSON.parse(errorText);
+        errorDetails = errorData.error?.message || errorText;
+      } catch {
+        errorDetails = errorText;
+      }
+      
+      // Handle specific HTTP errors
+      if (response.status === 401) {
+        console.error('401 Error Details:', errorDetails);
+        throw new Error(`API Authentication Failed: ${errorDetails}`);
+      } else if (response.status === 429) {
+        console.error('429 Error Details:', errorDetails);
+        throw new Error(`Rate limit or quota exceeded: ${errorDetails}`);
+      } else if (response.status === 400) {
+        console.error('400 Error Details:', errorDetails);
+        throw new Error(`Bad request: ${errorDetails}`);
+      } else {
+        throw new Error(`HTTP ${response.status}: ${errorDetails}`);
+      }
     }
+
+    const data = await response.json();
+    console.log('OpenAI API response:', JSON.stringify(data, null, 2));
+
+    // Better validation of the response structure
+    if (!data) {
+      throw new Error('Empty response from API');
+    }
+
+    if (data.error) {
+      console.error('API Error:', data.error);
+      throw new Error(`API Error: ${data.error.message || 'Unknown error'}`);
+    }
+
+    if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+      console.error('Invalid response structure:', data);
+      throw new Error('No response generated - invalid API response structure');
+    }
+
+    const choice = data.choices[0];
+    if (!choice.message || !choice.message.content) {
+      console.error('Invalid choice structure:', choice);
+      throw new Error('No response generated - empty message content');
+    }
+
+    return choice.message.content.trim();
+
   } catch (error) {
     console.error('Error getting AI response:', error);
 
-    // Check for specific error types with human-like responses
+    // More specific error handling
+    if (error instanceof Error) {
+      if (error.message.includes('API Authentication Failed')) {
+        return `🔑 Authentication Error: ${error.message}\n\nPossible solutions:\n• Check if your API key is valid\n• Verify your OpenAI account has sufficient credits\n• Make sure billing is set up correctly`;
+      } else if (error.message.includes('Rate limit') || error.message.includes('quota exceeded')) {
+        return `🚦 ${error.message}\n\nThis usually means:\n• You've hit your usage limit\n• Your account needs more credits\n• Wait a moment and try again`;
+      } else if (error.message.includes('Bad request')) {
+        return `🤔 Request Error: ${error.message}\n\nTry rephrasing your message or check the format.`;
+      } else if (error.message.includes('No response generated')) {
+        return "I'm having trouble formulating a response right now. 😅 Could you try asking me something else?";
+      }
+    }
+
+    // Network/connection errors
     if (error instanceof TypeError && error.message.includes('fetch')) {
       return "Oops! 😅 Looks like I'm having trouble connecting to my brain at the moment. Could you try again in a bit? Sometimes even AI needs a moment to reconnect!";
     } else if (error instanceof SyntaxError) {
       return 'Hmm, something got scrambled in my thinking process! 🤔 My apologies for the confusion. Could we try that conversation again?';
-    } else if (
-      error instanceof Error &&
-      error.message === 'No response generated'
-    ) {
-      return 'Oh! I was just about to say something clever but lost my train of thought! 😊 Could you repeat that for me?';
     }
 
-    // Generic error
+    // Generic error fallback
     return "Well that's embarrassing... 😳 I seem to be having a little technical hiccup. Let's try again, shall we? I promise I'm usually more helpful!";
   }
 };
