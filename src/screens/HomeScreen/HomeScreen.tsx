@@ -26,6 +26,7 @@
 
 // // Import the OpenAI utility
 // import { getAIResponse } from '../../utils';
+// import MyBannerAd from '../../components/MyBannerAd';
 
 // interface HomeScreenProps {
 //   navigation: any;
@@ -91,7 +92,7 @@
 //   return backgroundImages.avatar0;
 // };
 
-// export const HomeScreen = ({ navigation }: HomeScreenProps) => {
+// const HomeScreen = ({ navigation }: HomeScreenProps) => {
 //   const [message, setMessage] = useState('');
 //   const [botName, setBotName] = useState<string>('Alexa');
 //   const [messages, setMessages] = useState<Message[]>([]);
@@ -105,6 +106,29 @@
 //   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
 //   const flatListRef = useRef<FlatList>(null);
+
+//   // Handle back button to prevent navigation to login screen
+//   useFocusEffect(
+//     React.useCallback(() => {
+//       const onBackPress = () => {
+//         // Prevent going back to login screen
+//         Alert.alert(
+//           'Exit App',
+//           'Are you sure you want to exit the app?',
+//           [
+//             { text: 'Cancel', style: 'cancel' },
+//             { text: 'Exit', onPress: () => BackHandler.exitApp() }
+//           ],
+//           { cancelable: true }
+//         );
+//         return true; // Prevent default back action
+//       };
+
+//       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+//       return () => subscription.remove();
+//     }, [])
+//   );
 
 //   // Get avatar image based on index
 //   const getAvatarImage = (index: number) => {
@@ -536,15 +560,21 @@
 //               />
 //               <Text style={styles.menuText}>Clear Chat</Text>
 //             </TouchableOpacity>
+            
 //           </View>
 //         )}
 //       </View>
 //     </LinearGradient>
 //   );
 
-//   // Fix the mainContent structure
+//   // Fix the mainContent structure with banner ad at the top
 //   const mainContent = (
 //     <SafeAreaView style={styles.container}>
+//       {/* Banner Ad at the very top */}
+//       <View style={styles.bannerContainer}>
+//         <MyBannerAd />
+//       </View>
+
 //       {/* Header with 3-dot menu */}
 //       {renderHeader()}
 
@@ -656,6 +686,14 @@
 //     flex: 1,
 //     width: '100%',
 //     height: '100%',
+//   },
+//   // New style for banner container at the top
+//   bannerContainer: {
+//     backgroundColor: '#fff', // You can change this or make it transparent
+//     // paddingVertical: 5,
+//     borderBottomWidth: 1,
+//     borderBottomColor: '#eee',
+//     zIndex: 100,
 //   },
 //   header: {
 //     paddingVertical: spacing.md,
@@ -843,24 +881,11 @@
 //   },
 // });
 
-/**
- * Example AI Response for "Hi, I'm Sarah!" based on different user preferences:
- *
- * For energetic outdoor person in a good mood:
- * "Hi Sarah! It's wonderful to meet you! I'm Aurora, your personal AI companion.
- * The weather looks perfect for a hike or bike ride today. What outdoor adventures
- * do you have planned? I'd love to help you make the most of this beautiful day!"
- *
- * For low-energy night owl in a tired mood:
- * "Hello Sarah... Nice to meet you. I'm Aurora. I understand the evening hours
- * can be peaceful. Perhaps you'd enjoy a relaxing indoor activity tonight, like
- * reading a book with some tea or watching a documentary? How can I support you tonight?"
- *
- * For neutral morning person who likes both environments:
- * "Good morning, Sarah! I'm Aurora, and I'm here to help start your day right.
- * Would you prefer some ideas for your morning routine, or perhaps suggestions
- * for activities you could enjoy today, whether indoors or out in nature?"
- */
+// // Export as default
+// export default HomeScreen;
+
+
+
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -890,6 +915,7 @@ import { CustomDrawer } from '../../components';
 
 // Import the OpenAI utility
 import { getAIResponse } from '../../utils';
+import MyBannerAd from '../../components/MyBannerAd';
 
 interface HomeScreenProps {
   navigation: any;
@@ -909,6 +935,12 @@ interface UserPreferences {
   environment: string;
   avatar: number;
   botName: string;
+}
+
+interface UserCoins {
+  coins: number;
+  messagesUsed: number;
+  totalMessages: number;
 }
 
 // Static image imports
@@ -955,7 +987,7 @@ const getBackgroundImage = (preferences: UserPreferences) => {
   return backgroundImages.avatar0;
 };
 
-export const HomeScreen = ({ navigation }: HomeScreenProps) => {
+const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const [message, setMessage] = useState('');
   const [botName, setBotName] = useState<string>('Alexa');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -967,6 +999,14 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
 
   // Add state for menu visibility
   const [isMenuVisible, setIsMenuVisible] = useState(false);
+  
+  // Add coin system state
+  const [userCoins, setUserCoins] = useState<UserCoins>({
+    coins: 5,
+    messagesUsed: 0,
+    totalMessages: 10,
+  });
+  const [showAdModal, setShowAdModal] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -1001,7 +1041,7 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
     return avatarImages[0]; // Default to first avatar
   };
 
-  // Update loadPreferences to handle background selection more clearly
+  // Load user preferences and coins
   const loadPreferences = async () => {
     try {
       const preferencesData = await AsyncStorage.getItem('user_preferences');
@@ -1042,9 +1082,85 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
           }
         }
       }
+      
+      // Load coins data
+      await loadCoinsData();
     } catch (error) {
       console.error('Error loading preferences:', error);
     }
+  };
+
+  // Load coins data from AsyncStorage
+  const loadCoinsData = async () => {
+    try {
+      const coinsData = await AsyncStorage.getItem('user_coins');
+      if (coinsData) {
+        const coins = JSON.parse(coinsData);
+        setUserCoins(coins);
+      } else {
+        // First time user, set initial coins
+        const initialCoins = {
+          coins: 5,
+          messagesUsed: 0,
+          totalMessages: 10,
+        };
+        await AsyncStorage.setItem('user_coins', JSON.stringify(initialCoins));
+        setUserCoins(initialCoins);
+      }
+    } catch (error) {
+      console.error('Error loading coins data:', error);
+    }
+  };
+
+  // Save coins data to AsyncStorage
+  const saveCoinsData = async (coinsData: UserCoins) => {
+    try {
+      await AsyncStorage.setItem('user_coins', JSON.stringify(coinsData));
+    } catch (error) {
+      console.error('Error saving coins data:', error);
+    }
+  };
+
+  // Function to handle watching ad and earning coins
+  const watchAdForCoins = () => {
+    setShowAdModal(false);
+    
+    // Add 2 coins (4 more messages)
+    const updatedCoins = {
+      ...userCoins,
+      coins: userCoins.coins + 2,
+      totalMessages: userCoins.totalMessages + 4,
+    };
+    
+    setUserCoins(updatedCoins);
+    saveCoinsData(updatedCoins);
+    
+    Alert.alert(
+      'Coins Earned! 🎉',
+      'You earned 2 coins! You can now send 4 more messages.',
+      [{ text: 'Great!', style: 'default' }]
+    );
+  };
+
+  // Check if user can send message
+  const canSendMessage = () => {
+    return userCoins.messagesUsed < userCoins.totalMessages;
+  };
+
+  // Use coins when sending message
+  const useCoins = () => {
+    const updatedCoins = {
+      ...userCoins,
+      messagesUsed: userCoins.messagesUsed + 1,
+    };
+    
+    // Update coins count (1 coin = 2 messages, so subtract 0.5 coin per message)
+    if (updatedCoins.messagesUsed % 2 === 0) {
+      updatedCoins.coins = updatedCoins.coins - 1;
+    }
+    
+    setUserCoins(updatedCoins);
+    saveCoinsData(updatedCoins);
   };
 
   // Load user preferences
@@ -1205,12 +1321,18 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
     );
   };
 
-  // Logout function
-
-
-  // Replace the sendMessage function with this updated version
+  // Replace the sendMessage function with coin system
   const sendMessage = async () => {
     if (message.trim() === '') return;
+
+    // Check if user has enough messages left
+    if (!canSendMessage()) {
+      setShowAdModal(true);
+      return;
+    }
+
+    // Use coins
+    useCoins();
 
     // Add user message
     const userMessage: Message = {
@@ -1379,7 +1501,7 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
     </View>
   );
 
-  // Update the header to include 3-dot menu
+  // Update the header to show coins
   const renderHeader = () => (
     <LinearGradient
       colors={['#00BFFF', '#FF69B4']}
@@ -1404,7 +1526,16 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
         </View>
       </TouchableOpacity>
 
-      <View>
+      <View style={styles.headerRightContainer}>
+        {/* Coins Display */}
+        <View style={styles.coinsContainer}>
+          <Icon name="monetization-on" size={18} color="#FFD700" />
+          <Text style={styles.coinsText}>{userCoins.coins}</Text>
+          <Text style={styles.messagesLeftText}>
+            {userCoins.totalMessages - userCoins.messagesUsed} left
+          </Text>
+        </View>
+
         <TouchableOpacity style={styles.optionsButton} onPress={toggleMenu}>
           <Icon name="more-vert" size={24} color="#fff" />
         </TouchableOpacity>
@@ -1433,9 +1564,14 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
     </LinearGradient>
   );
 
-  // Fix the mainContent structure
+  // Fix the mainContent structure with banner ad at the top
   const mainContent = (
     <SafeAreaView style={styles.container}>
+      {/* Banner Ad at the very top */}
+      <View style={styles.bannerContainer}>
+        <MyBannerAd />
+      </View>
+
       {/* Header with 3-dot menu */}
       {renderHeader()}
 
@@ -1465,24 +1601,26 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
           <View style={styles.inputContainer}>
-            {/* <TouchableOpacity style={styles.attachButton}>
-              <Icon name="attach-file" size={24} color="#999" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.imageButton}>
-              <Icon name="image" size={24} color="#999" />
-            </TouchableOpacity> */}
             <TextInput
               style={styles.input}
-              placeholder="Type your message..."
+              placeholder={
+                canSendMessage() 
+                  ? "Type your message..."
+                  : "Press On Mic Icon To earb coins ->"
+              }
               placeholderTextColor="#999"
               value={message}
               onChangeText={setMessage}
               multiline
+              editable={canSendMessage()}
             />
             {message.trim() === '' ? (
-              <TouchableOpacity style={styles.micButton}>
+              <TouchableOpacity 
+                style={styles.micButton}
+                onPress={canSendMessage() ? undefined : () => setShowAdModal(true)}
+              >
                 <LinearGradient
-                  colors={['#FF66CC', '#6666FF']}
+                  colors={canSendMessage() ? ['#FF66CC', '#6666FF'] : ['#ccc', '#999']}
                   style={styles.micButtonGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
@@ -1491,9 +1629,13 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
                 </LinearGradient>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+              <TouchableOpacity 
+                style={styles.sendButton} 
+                onPress={sendMessage}
+                disabled={!canSendMessage()}
+              >
                 <LinearGradient
-                  colors={['#FF66CC', '#6666FF']}
+                  colors={canSendMessage() ? ['#FF66CC', '#6666FF'] : ['#ccc', '#999']}
                   style={styles.sendButtonGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
@@ -1505,6 +1647,38 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
           </View>
         </KeyboardAvoidingView>
       </View>
+
+      {/* Ad Modal */}
+      {showAdModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.adModal}>
+            <Text style={styles.adModalTitle}>🪙 No More Messages!</Text>
+            <Text style={styles.adModalText}>
+              You've used all your messages. Watch an ad to earn 2 more coins and continue chatting!
+            </Text>
+            <View style={styles.adModalButtons}>
+              <TouchableOpacity 
+                style={styles.watchAdButton}
+                onPress={watchAdForCoins}
+              >
+                <LinearGradient
+                  colors={['#4CAF50', '#45a049']}
+                  style={styles.watchAdButtonGradient}
+                >
+                  <Icon name="play-arrow" size={20} color="#fff" />
+                  <Text style={styles.watchAdButtonText}>Watch Ad (+2 🪙)</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.cancelAdButton}
+                onPress={() => setShowAdModal(false)}
+              >
+                <Text style={styles.cancelAdButtonText}>Maybe Later</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 
@@ -1548,6 +1722,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  // New style for banner container at the top
+  bannerContainer: {
+    backgroundColor:   '#a37d7dff', // You can change this or make it transparent
+    
+    borderBottomColor: '#a37d7dff',
+    zIndex: 100,
+  },
   header: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
@@ -1558,6 +1739,31 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  headerRightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  coinsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 15,
+    marginRight: 10,
+  },
+  coinsText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginLeft: 4,
+  },
+  messagesLeftText: {
+    color: '#fff',
+    fontSize: 12,
+    marginLeft: 6,
+    opacity: 0.9,
   },
   optionsButton: {
     padding: spacing.xs,
@@ -1732,23 +1938,70 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.01)', // Almost transparent but still captures touches
     zIndex: 5,
   },
+  // Ad Modal Styles
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  adModal: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    margin: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  adModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  adModalText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  adModalButtons: {
+    width: '100%',
+  },
+  watchAdButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  watchAdButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+  },
+  watchAdButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  cancelAdButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  cancelAdButtonText: {
+    color: '#999',
+    fontSize: 16,
+  },
 });
 
-/**
- * Example AI Response for "Hi, I'm Sarah!" based on different user preferences:
- *
- * For energetic outdoor person in a good mood:
- * "Hi Sarah! It's wonderful to meet you! I'm Aurora, your personal AI companion.
- * The weather looks perfect for a hike or bike ride today. What outdoor adventures
- * do you have planned? I'd love to help you make the most of this beautiful day!"
- *
- * For low-energy night owl in a tired mood:
- * "Hello Sarah... Nice to meet you. I'm Aurora. I understand the evening hours
- * can be peaceful. Perhaps you'd enjoy a relaxing indoor activity tonight, like
- * reading a book with some tea or watching a documentary? How can I support you tonight?"
- *
- * For neutral morning person who likes both environments:
- * "Good morning, Sarah! I'm Aurora, and I'm here to help start your day right.
- * Would you prefer some ideas for your morning routine, or perhaps suggestions
- * for activities you could enjoy today, whether indoors or out in nature?"
- */
+// Export as default
+export default HomeScreen;

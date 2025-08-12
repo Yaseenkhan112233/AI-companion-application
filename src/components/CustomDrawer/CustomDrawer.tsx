@@ -508,6 +508,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     zIndex: 1,
+    marginTop:'6%'
   },
   container: {
     position: 'absolute',
@@ -516,7 +517,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: DRAWER_WIDTH,
     backgroundColor: 'white',
-    zIndex: 2,
+    zIndex: 20000,
     shadowColor: '#000',
     shadowOffset: {
       width: 2,
@@ -525,6 +526,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+        // marginTop:'3%'
+
+
   },
   header: {
     padding: spacing.xl,

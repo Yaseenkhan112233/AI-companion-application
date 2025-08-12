@@ -1,6 +1,6 @@
 export * from './OnboardingScreen';
 export * from './SignInScreen';
 export * from './QuestionnaireScreen/index';
-export * from './HomeScreen';
+export {HomeScreen} from './HomeScreen';
 export * from './ProfileSettingsScreen';
-export { default as SignUpScreen } from './SignupScreen/SignupScreen';
+export * from './SignupScreen/SignupScreen';
