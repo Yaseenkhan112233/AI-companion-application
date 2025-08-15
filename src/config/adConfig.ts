@@ -16,9 +16,10 @@ export const AD_CONFIG = {
   testDeviceIds: [
     '__DEVICE_ID__', // Add your test device ID here
   ],
+
+  // Test IDs for rewarded ads
+  rewardedAdId: {
+    ios: 'ca-app-pub-3940256099942544/1712485313', // Test ID
+    android: 'ca-app-pub-3940256099942544/5224354917', // Test ID
+  },
 };
-
-
-
-
-
