@@ -249,7 +249,7 @@ export const getAIResponse = async (
     console.log('Sending request to OpenRouter API...');
     
     // OpenRouter API configuration
-    const API_KEY = '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';
+    const API_KEY = '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';
     const API_URL = 'https://openrouter.ai/api/v1/chat/completions'; // Fixed endpoint
 
     const systemMessage = await buildSystemMessage();

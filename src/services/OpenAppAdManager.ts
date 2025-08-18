@@ -1,16 +1,16 @@
 
 
-// services/OpenAppAdManager
+// services/OpenAppAdManager.ts
 import { Platform, AppState, AppStateStatus } from 'react-native';
 import {
   AppOpenAd,
   RewardedAd,
   AdEventType,
-  TestIds,
   RewardedAdEventType,
 } from 'react-native-google-mobile-ads';
 import { AD_CONFIG } from '../config/adConfig';
 
+// -------------------- Open App Ad Manager --------------------
 class OpenAppAdManager {
   private appOpenAd: AppOpenAd | null = null;
   private isLoadingAd = false;
@@ -22,9 +22,16 @@ class OpenAppAdManager {
   public disableAppOpenAd = false;
   private lastAdShowTime = 0;
 
+  // Prevent Open App Ad immediately after rewarded ad
+  private preventShowAfterReward = false;
+  private _disableTimeout: NodeJS.Timeout | null = null;
+
+  // 🆕 Skip first ad show after login
+  private skipFirstAd = true;
+
   constructor() {
-    this.loadAd(); // ✅ Start loading ad at init
-    this.setupAppStateListener(); // ✅ Setup listener for app state changes
+    this.loadAd();
+    this.setupAppStateListener();
   }
 
   private getAdUnitId(): string {
@@ -42,22 +49,33 @@ class OpenAppAdManager {
 
   private handleAppStateChange = (nextAppState: AppStateStatus) => {
     if (this.appState === 'background' && nextAppState === 'active') {
+      // 🆕 First time after login → skip ad
+      if (this.skipFirstAd) {
+        console.log('⚠️ Skipping first open app ad after login');
+        this.skipFirstAd = false;
+        this.appState = nextAppState;
+        return;
+      }
+
       const now = Date.now();
-      // Only show if not disabled and at least 30 seconds since last ad
-      if (!this.disableAppOpenAd && now - this.lastAdShowTime > 30000) {
-        // ✅ Delay ad show to allow time for resume transition
+      if (
+        !this.disableAppOpenAd &&
+        !this.preventShowAfterReward &&
+        now - this.lastAdShowTime > 30000
+      ) {
         setTimeout(() => {
           this.showAdIfAvailable();
         }, 1000);
+      } else if (this.preventShowAfterReward) {
+        console.log('⚠️ Skipping open app ad due to recent rewarded ad');
+        this.preventShowAfterReward = false;
       }
     }
     this.appState = nextAppState;
   };
 
   private loadAd = () => {
-    if (this.isLoadingAd || this.isAdAvailable()) {
-      return;
-    }
+    if (this.isLoadingAd || this.isAdAvailable()) return;
 
     this.isLoadingAd = true;
 
@@ -76,11 +94,7 @@ class OpenAppAdManager {
       console.error('❌ Open app ad failed to load:', error);
       this.isLoadingAd = false;
       this.adLoaded = false;
-
-      // Retry loading after a delay
-      setTimeout(() => {
-        this.loadAd();
-      }, 10000); // 10 seconds
+      setTimeout(() => this.loadAd(), 10000);
     });
 
     this.appOpenAd.addAdEventListener(AdEventType.OPENED, () => {
@@ -93,7 +107,7 @@ class OpenAppAdManager {
       this.isShowingAd = false;
       this.appOpenAd = null;
       this.adLoaded = false;
-      this.loadAd(); // Prepare the next ad
+      this.loadAd();
     });
 
     this.appOpenAd.load();
@@ -123,7 +137,7 @@ class OpenAppAdManager {
     try {
       this.isShowingAd = true;
       this.lastAdShowTime = Date.now();
-      
+
       this.appOpenAd?.addAdEventListener(AdEventType.CLOSED, () => {
         this.isShowingAd = false;
         onAdDismissed?.();
@@ -131,10 +145,22 @@ class OpenAppAdManager {
 
       this.appOpenAd?.show();
     } catch (error) {
-      console.error('❌ Failed to show app open ad:', error);
+      console.error('❌ Failed to show open app ad:', error);
       onAdDismissed?.();
     }
   };
+
+  public temporarilyDisable(durationMs: number = 60000) {
+    this.disableAppOpenAd = true;
+    if (this._disableTimeout) clearTimeout(this._disableTimeout);
+    this._disableTimeout = setTimeout(() => {
+      this.disableAppOpenAd = false;
+    }, durationMs);
+  }
+
+  public markPreventShowAfterReward() {
+    this.preventShowAfterReward = true;
+  }
 
   public destroy() {
     this.appStateSubscription?.remove();
@@ -143,7 +169,7 @@ class OpenAppAdManager {
   }
 }
 
-// Singleton export
+// -------------------- Rewarded Ad Manager --------------------
 class RewardedAdManager {
   private rewardedAd: RewardedAd | null = null;
   private isLoadingAd = false;
@@ -160,9 +186,7 @@ class RewardedAdManager {
   }
 
   private loadAd = () => {
-    if (this.isLoadingAd || this.rewardedAd !== null) {
-      return;
-    }
+    if (this.isLoadingAd || this.rewardedAd !== null) return;
 
     this.isLoadingAd = true;
     this.rewardedAd = RewardedAd.createForAdRequest(this.getAdUnitId(), {
@@ -178,26 +202,33 @@ class RewardedAdManager {
       console.error('❌ Rewarded ad failed to load:', error);
       this.isLoadingAd = false;
       this.rewardedAd = null;
-      setTimeout(() => this.loadAd(), 10000); // Retry after 10 seconds
+      setTimeout(() => this.loadAd(), 10000);
     });
 
-    this.rewardedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
-      console.log('💰 User earned reward:', reward);
-    });
+    this.rewardedAd.addAdEventListener(
+      RewardedAdEventType.EARNED_REWARD,
+      (reward) => {
+        console.log('💰 User earned reward:', reward);
+      }
+    );
 
     this.rewardedAd.addAdEventListener(AdEventType.CLOSED, () => {
-      console.log('📪 Rewarded ad closed - disabling open app ads for 5 minutes');
+      console.log('📪 Rewarded ad closed');
       this.isShowingAd = false;
       this.rewardedAd = null;
-      this.loadAd(); // Prepare next ad
-      temporarilyDisableAppOpenAd(300000); // Prevent open app ads for 5 minutes
-      console.log('🔴 Open app ads temporarily disabled');
+      this.loadAd();
+
+      // // Prevent open app ad from showing immediately after reward
+      // openAppAdManager.markPreventShowAfterReward();
+      // openAppAdManager.temporarilyDisable(300000); // optional: extra 5 minutes safety
     });
 
     this.rewardedAd.load();
   };
 
-  public showAd = async (onEarnedReward?: () => void): Promise<boolean> => {
+  public showAd = async (
+    onEarnedReward?: () => void
+  ): Promise<boolean> => {
     if (this.isShowingAd || !this.rewardedAd) {
       console.log('⚠️ Rewarded ad not ready or already showing');
       return false;
@@ -205,8 +236,7 @@ class RewardedAdManager {
 
     try {
       this.isShowingAd = true;
-      
-      // Add one-time event listener for reward
+
       if (onEarnedReward) {
         this.rewardedAd.addAdEventListener(
           RewardedAdEventType.EARNED_REWARD,
@@ -227,16 +257,7 @@ class RewardedAdManager {
   };
 }
 
-// Singleton exports
-export const openAppAdManager = new OpenAppAdManager();
+// -------------------- Singleton Exports --------------------
+// export const openAppAdManager = new OpenAppAdManager();
 export const rewardedAdManager = new RewardedAdManager();
-
-// Helper to temporarily disable app open ads (e.g. after showing rewarded ad)
-export const temporarilyDisableAppOpenAd = (durationMs: number = 60000) => {
-  openAppAdManager.disableAppOpenAd = true;
-  setTimeout(() => {
-    openAppAdManager.disableAppOpenAd = false;
-  }, durationMs);
-};
-
 

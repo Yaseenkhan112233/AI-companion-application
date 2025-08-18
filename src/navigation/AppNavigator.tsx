@@ -1,11 +1,8 @@
 
-
-
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { openAppAdManager } from '../services/OpenAppAdManager';
 import {
   OnboardingScreen,
   SignInScreen,
@@ -13,8 +10,7 @@ import {
   HomeScreen,
   ProfileSettingsScreen,
 } from '../screens';
-import SignUpScreen from '../screens/SignupScreen/SignupScreen';
-
+import SignupScreen from '../screens/SignupScreen/SignupScreen';
 
 export type RootStackParamList = {
   Onboarding: undefined;
@@ -33,11 +29,6 @@ export const AppNavigator = () => {
 
   useEffect(() => {
     checkAuthStatus();
-    
-    // Cleanup ads when component unmounts
-    return () => {
-      openAppAdManager.destroy();
-    };
   }, []);
 
   const checkAuthStatus = async () => {
@@ -80,7 +71,7 @@ export const AppNavigator = () => {
           name="ProfileSettings"
           component={ProfileSettingsScreen}
         />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
+        <Stack.Screen name="SignUp" component={SignupScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

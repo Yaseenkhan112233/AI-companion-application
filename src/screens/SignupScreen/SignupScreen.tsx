@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,26 +10,16 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import {
-  GoogleSignin,
-  statusCodes,
-  User,
-} from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
 import { GradientBackground } from '../../components/GradientBackground';
 import { colors } from '../../theme';
 import { useNavigation } from '@react-navigation/native';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import { GoogleAuthProvider } from '@react-native-firebase/auth';
 
 const SignUpScreen = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [currentGoogleUser, setCurrentGoogleUser] = useState<User | null>(null);
-
-
 
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword) {
@@ -59,11 +48,9 @@ const SignUpScreen = () => {
         <ScrollView contentContainerStyle={styles.innerContainer}>
           <Text style={styles.heading}>Create Account</Text>
 
-         
-
           <View style={styles.dividerContainer}>
             <View style={styles.divider} />
-            <Text style={styles.dividerText}>Or create with email</Text>
+            <Text style={styles.dividerText}>Create with email</Text>
             <View style={styles.divider} />
           </View>
 
@@ -125,46 +112,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
   },
-  googleSection: {
-    marginBottom: 20,
-  },
-  googleButton: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  googleButtonText: {
-    marginLeft: 12,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  currentAccountInfo: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  currentAccountText: {
-    color: '#fff',
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  changeAccountButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  changeAccountText: {
-    color: '#fff',
-    fontSize: 12,
-    textDecorationLine: 'underline',
-    fontWeight: '600',
-  },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -210,4 +157,3 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 });
-
