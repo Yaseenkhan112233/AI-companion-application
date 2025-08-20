@@ -17,6 +17,9 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, typography, radius } from '../../theme';
 import LinearGradient from 'react-native-linear-gradient';
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
+
 
 interface QuestionnaireScreenProps {
   navigation: any;
@@ -135,9 +138,8 @@ export const QuestionnaireScreen = ({
 
   const handleNext = async () => {
     if (!allQuestionsAnswered) return;
-
+  
     try {
-      // Save user preferences to local storage
       const userPreferences = {
         mood,
         energyLevel,
@@ -145,20 +147,30 @@ export const QuestionnaireScreen = ({
         environment,
         avatar: selectedAvatar,
         botName: avatarName,
+        createdAt: firestore.FieldValue.serverTimestamp(),
       };
-
-      await AsyncStorage.setItem(
-        'user_preferences',
-        JSON.stringify(userPreferences),
-      );
+  
+      // Save to AsyncStorage (local backup)
+      await AsyncStorage.setItem('user_preferences', JSON.stringify(userPreferences));
       await AsyncStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
-
-      // Navigate to home screen after storing preferences
+  
+      // ✅ Save to Firestore
+      const user = auth().currentUser;
+      if (user) {
+        await firestore()
+          .collection('users')
+          .doc(user.uid)
+          .collection('questionnaires')
+          .add(userPreferences);
+      }
+  
+      // Navigate to home
       navigation.replace('Home');
     } catch (error) {
       console.log('Error saving preferences:', error);
     }
   };
+  
 
   const handleBack = () => {
     navigation.goBack();
