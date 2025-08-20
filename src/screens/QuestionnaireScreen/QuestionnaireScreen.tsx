@@ -793,7 +793,7 @@ export const QuestionnaireScreen = ({ navigation }: QuestionnaireScreenProps) =>
         environment,
         avatar: selectedAvatar,
         botName: avatarName,
-        createdAt: firestore.FieldValue.serverTimestamp(),
+        // createdAt: fire.FieldValue.serverTimestamp(),
       };
 
       await AsyncStorage.setItem(
