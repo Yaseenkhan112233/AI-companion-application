@@ -1,20 +1,16 @@
 
-// // App.tsx
+
+
+
 // import React, { useEffect } from 'react';
 // import { SafeAreaProvider } from 'react-native-safe-area-context';
 // import { AppNavigator } from './src/navigation';
 // import mobileAds, { MaxAdContentRating } from 'react-native-google-mobile-ads';
-// import { openAppAdManager } from './src/services/OpenAppAdManager';
 // import { AD_CONFIG } from './src/config/adConfig';
 
 // const App = () => {
 //   useEffect(() => {
 //     initializeAds();
-    
-//     // Clean up on app unmount
-//     return () => {
-//       openAppAdManager.destroy();
-//     };
 //   }, []);
 
 //   const initializeAds = async () => {
@@ -43,11 +39,10 @@
 // export default App;
 
 
-
-
 import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigator } from './src/navigation';
+import { AuthProvider } from './src/contexts/AuthContext'; // Add this import
 import mobileAds, { MaxAdContentRating } from 'react-native-google-mobile-ads';
 import { AD_CONFIG } from './src/config/adConfig';
 
@@ -74,7 +69,9 @@ const App = () => {
 
   return (
     <SafeAreaProvider>
-      <AppNavigator />
+      <AuthProvider>
+        <AppNavigator />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 };
