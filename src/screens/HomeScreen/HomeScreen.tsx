@@ -722,7 +722,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
               placeholder={
                 canSendMessage() 
                   ? "Type your message..."
-                  : "Press On Mic Icon To earb coins ->"
+                  : "Press On Send Icon To Earn coins ->"
               }
               placeholderTextColor="#999"
               value={message}
@@ -741,7 +741,9 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Icon name="mic" size={24} color="#fff" />
+                  {/* <Icon name="mic" size={24} color="#fff" /> */}
+                                    <Icon name="send" size={24} color="#fff" />
+
                 </LinearGradient>
               </TouchableOpacity>
             ) : (
