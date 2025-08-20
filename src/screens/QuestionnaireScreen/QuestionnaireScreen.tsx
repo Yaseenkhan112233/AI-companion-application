@@ -678,8 +678,6 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, typography, radius } from '../../theme';
 import LinearGradient from 'react-native-linear-gradient';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
 
 interface QuestionnaireScreenProps {
   navigation: any;
@@ -786,7 +784,7 @@ export const QuestionnaireScreen = ({ navigation }: QuestionnaireScreenProps) =>
 
   const handleNext = async () => {
     if (!allQuestionsAnswered) return;
-
+  
     try {
       const userPreferences = {
         mood,
@@ -798,24 +796,19 @@ export const QuestionnaireScreen = ({ navigation }: QuestionnaireScreenProps) =>
         createdAt: firestore.FieldValue.serverTimestamp(),
       };
 
-      // Save to AsyncStorage
-      await AsyncStorage.setItem('user_preferences', JSON.stringify(userPreferences));
+      await AsyncStorage.setItem(
+        'user_preferences',
+        JSON.stringify(userPreferences),
+      );
       await AsyncStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
 
-      // Save to Firestore
-      const currentUser = auth().currentUser;
-      if (currentUser) {
-        await firestore()
-          .collection('users')
-          .doc(currentUser.uid)
-          .set(userPreferences, { merge: true });
-      }
-
+      // Navigate to home screen after storing preferences
       navigation.replace('Home');
     } catch (error) {
       console.log('Error saving preferences:', error);
     }
   };
+  
 
   const handleBack = () => {
     navigation.goBack();
