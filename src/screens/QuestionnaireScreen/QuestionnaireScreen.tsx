@@ -967,7 +967,7 @@ export const QuestionnaireScreen = ({ navigation }: QuestionnaireScreenProps) =>
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.avatarCarousel}
             decelerationRate="fast"
-            snapToInterval={Dimensions.get('window').width * 0.4}
+            snapToInterval={Dimensions.get('window').width * 0.9}
             snapToAlignment="center"
           >
             {avatarImages.map((image, index) => (
@@ -1099,7 +1099,7 @@ const styles = StyleSheet.create({
   environmentText: { fontSize: 14, marginTop: spacing.xs, color: colors.text.secondary },
   avatarCarousel: { paddingVertical: spacing.md, paddingHorizontal: spacing.xs },
   avatarOption: {
-    width: Dimensions.get('window').width * 0.35,
+    width: Dimensions.get('window').width * 0.20,
     height: Dimensions.get('window').width * 0.35,
     borderRadius: radius.md,
     borderWidth: 2,

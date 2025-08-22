@@ -261,6 +261,247 @@
 // // export const openAppAdManager = new OpenAppAdManager();
 // export const rewardedAdManager = new RewardedAdManager();
 // services/RewardedAdManager.ts
+
+
+// import { Platform } from 'react-native';
+// import {
+//   RewardedAd,
+//   AdEventType,
+//   RewardedAdEventType,
+//   TestIds,
+// } from 'react-native-google-mobile-ads';
+// import { AD_CONFIG } from '../config/adConfig';
+
+// class RewardedAdManager {
+//   private rewardedAd: RewardedAd | null = null;
+//   private isLoadingAd = false;
+//   private isShowingAd = false;
+//   private isAdLoaded = false;
+//   private retryCount = 0;
+//   private maxRetries = 3;
+//   private retryDelay = 5000; // Start with 5 seconds
+
+//   constructor() {
+//     console.log('🚀 Initializing RewardedAdManager');
+//     this.loadAd();
+//   }
+
+//   private getAdUnitId(): string {
+//     // Use test ads during development
+//     const isDevelopment = __DEV__;
+    
+//     if (isDevelopment) {
+//       return TestIds.REWARDED;
+//     }
+
+//     return Platform.OS === 'ios'
+//       ? AD_CONFIG.rewardedAdId.ios
+//       : AD_CONFIG.rewardedAdId.android;
+//   }
+
+//   private loadAd = () => {
+//     if (this.isLoadingAd || this.isAdLoaded) {
+//       console.log('⚠️ Already loading ad or ad already loaded');
+//       return;
+//     }
+
+//     console.log('📥 Loading rewarded ad...');
+//     this.isLoadingAd = true;
+
+//     try {
+//       this.rewardedAd = RewardedAd.createForAdRequest(this.getAdUnitId(), {
+//         requestNonPersonalizedAdsOnly: false,
+//         keywords: ['gaming', 'entertainment'], // Add relevant keywords
+//       });
+
+//       this.setupAdEventListeners();
+//       this.rewardedAd.load();
+//     } catch (error) {
+//       console.error('❌ Error creating rewarded ad:', error);
+//       this.handleLoadError();
+//     }
+//   };
+
+//   private setupAdEventListeners = () => {
+//     if (!this.rewardedAd) return;
+
+//     // Remove any existing listeners first
+//     this.rewardedAd.removeAllListeners();
+
+//     this.rewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
+//       console.log('✅ Rewarded ad loaded successfully');
+//       this.isLoadingAd = false;
+//       this.isAdLoaded = true;
+//       this.retryCount = 0; // Reset retry count on success
+//     });
+
+//     this.rewardedAd.addAdEventListener(AdEventType.ERROR, (error) => {
+//       console.error('❌ Rewarded ad error:', error);
+//       this.handleLoadError();
+//     });
+
+//     this.rewardedAd.addAdEventListener(AdEventType.OPENED, () => {
+//       console.log('📢 Rewarded ad opened');
+//       this.isShowingAd = true;
+//     });
+
+//     this.rewardedAd.addAdEventListener(AdEventType.CLOSED, () => {
+//       console.log('📪 Rewarded ad closed');
+//       this.isShowingAd = false;
+//       this.isAdLoaded = false;
+//       this.rewardedAd = null;
+      
+//       // Load next ad after a short delay
+//       setTimeout(() => {
+//         this.loadAd();
+//       }, 1000);
+//     });
+
+//     this.rewardedAd.addAdEventListener(
+//       RewardedAdEventType.EARNED_REWARD,
+//       (reward) => {
+//         console.log('💰 User earned reward:', reward);
+//       }
+//     );
+//   };
+
+//   private handleLoadError = () => {
+//     this.isLoadingAd = false;
+//     this.isAdLoaded = false;
+//     this.rewardedAd = null;
+
+//     if (this.retryCount < this.maxRetries) {
+//       this.retryCount++;
+//       const delay = this.retryDelay * this.retryCount; // Exponential backoff
+      
+//       console.log(`🔄 Retrying to load rewarded ad in ${delay}ms (attempt ${this.retryCount}/${this.maxRetries})`);
+      
+//       setTimeout(() => {
+//         this.loadAd();
+//       }, delay);
+//     } else {
+//       console.error('❌ Max retries reached for rewarded ad loading');
+//       // Reset retry count after some time
+//       setTimeout(() => {
+//         this.retryCount = 0;
+//         this.loadAd();
+//       }, 60000); // Try again after 1 minute
+//     }
+//   };
+
+//   public isAdReady = (): boolean => {
+//     const ready = this.rewardedAd !== null && this.isAdLoaded && !this.isShowingAd;
+//     console.log(`🔍 Ad ready status: ${ready} (ad: ${!!this.rewardedAd}, loaded: ${this.isAdLoaded}, showing: ${this.isShowingAd})`);
+//     return ready;
+//   };
+
+//   public showAd = async (
+//     onEarnedReward?: (reward: any) => void,
+//     onAdClosed?: () => void,
+//     onAdFailedToShow?: (error: any) => void
+//   ): Promise<boolean> => {
+//     console.log('🎬 Attempting to show rewarded ad');
+
+//     if (this.isShowingAd) {
+//       console.log('⚠️ Rewarded ad is already showing');
+//       return false;
+//     }
+
+//     if (!this.isAdReady()) {
+//       console.log('⚠️ Rewarded ad not ready');
+//       onAdFailedToShow?.({ message: 'Ad not ready. Please try again later.' });
+      
+//       // Try to load a new ad if none is loading
+//       if (!this.isLoadingAd) {
+//         this.loadAd();
+//       }
+//       return false;
+//     }
+
+//     try {
+//       // Add one-time event listeners for this show
+//       if (onEarnedReward) {
+//         const rewardListener = (reward: any) => {
+//           console.log('💰 Reward earned in show method:', reward);
+//           onEarnedReward(reward);
+//           this.rewardedAd?.removeAllListeners();
+//         };
+//         this.rewardedAd!.addAdEventListener(RewardedAdEventType.EARNED_REWARD, rewardListener);
+//       }
+
+//       if (onAdClosed) {
+//         const closedListener = () => {
+//           console.log('📪 Ad closed in show method');
+//           onAdClosed();
+//           if (this.rewardedAd) {
+//             this.rewardedAd.removeAllListeners();
+//           }
+//         };
+//         if (this.rewardedAd) {
+//           this.rewardedAd.addAdEventListener(AdEventType.CLOSED, closedListener);
+//         }
+//       }
+
+//       await this.rewardedAd!.show();
+//       console.log('✅ Rewarded ad show command sent');
+//       return true;
+
+//     } catch (error) {
+//       console.error('❌ Failed to show rewarded ad:', error);
+//       this.isShowingAd = false;
+//       onAdFailedToShow?.(error);
+      
+//       // Try to load a new ad
+//       if (!this.isLoadingAd) {
+//         this.loadAd();
+//       }
+//       return false;
+//     }
+//   };
+
+//   // Method to manually reload ad
+//   public reloadAd = () => {
+//     console.log('🔄 Manual ad reload requested');
+//     if (this.rewardedAd) {
+//       this.rewardedAd.removeAllListeners();
+//       this.rewardedAd = null;
+//     }
+//     this.isLoadingAd = false;
+//     this.isAdLoaded = false;
+//     this.isShowingAd = false;
+//     this.retryCount = 0;
+//     this.loadAd();
+//   };
+
+//   // Get current status for debugging
+//   public getStatus = () => {
+//     return {
+//       hasAd: !!this.rewardedAd,
+//       isLoaded: this.isAdLoaded,
+//       isLoading: this.isLoadingAd,
+//       isShowing: this.isShowingAd,
+//       isReady: this.isAdReady(),
+//       retryCount: this.retryCount,
+//       adUnitId: this.getAdUnitId(),
+//     };
+//   };
+
+//   public destroy = () => {
+//     console.log('🗑️ Destroying RewardedAdManager');
+//     if (this.rewardedAd) {
+//       this.rewardedAd.removeAllListeners();
+//       this.rewardedAd = null;
+//     }
+//     this.isLoadingAd = false;
+//     this.isAdLoaded = false;
+//     this.isShowingAd = false;
+//   };
+// }
+
+// // Export singleton instance
+// export const rewardedAdManager = new RewardedAdManager();
+
+
 import { Platform } from 'react-native';
 import {
   RewardedAd,
@@ -278,6 +519,7 @@ class RewardedAdManager {
   private retryCount = 0;
   private maxRetries = 3;
   private retryDelay = 5000; // Start with 5 seconds
+  private reloadTimeout: NodeJS.Timeout | null = null;
 
   constructor() {
     console.log('🚀 Initializing RewardedAdManager');
@@ -343,30 +585,57 @@ class RewardedAdManager {
       this.isShowingAd = true;
     });
 
+    // This is the key listener for reloading after the user watches the ad
     this.rewardedAd.addAdEventListener(AdEventType.CLOSED, () => {
-      console.log('📪 Rewarded ad closed');
-      this.isShowingAd = false;
-      this.isAdLoaded = false;
-      this.rewardedAd = null;
-      
-      // Load next ad after a short delay
-      setTimeout(() => {
-        this.loadAd();
-      }, 1000);
+      console.log('📪 Rewarded ad closed - preparing to reload');
+      this.handleAdClosed();
     });
 
     this.rewardedAd.addAdEventListener(
       RewardedAdEventType.EARNED_REWARD,
       (reward) => {
         console.log('💰 User earned reward:', reward);
+        // Ad will be reloaded when closed event fires
       }
     );
+  };
+
+  private handleAdClosed = () => {
+    console.log('🔄 Handling ad closed - cleaning up and reloading');
+    
+    // Clear any existing reload timeout
+    if (this.reloadTimeout) {
+      clearTimeout(this.reloadTimeout);
+      this.reloadTimeout = null;
+    }
+
+    // Reset state
+    this.isShowingAd = false;
+    this.isAdLoaded = false;
+    
+    // Clean up current ad
+    if (this.rewardedAd) {
+      this.rewardedAd.removeAllListeners();
+      this.rewardedAd = null;
+    }
+    
+    // Load next ad after a short delay to ensure proper cleanup
+    this.reloadTimeout = setTimeout(() => {
+      console.log('⏰ Starting ad reload after user watched ad');
+      this.loadAd();
+      this.reloadTimeout = null;
+    }, 1500); // Slightly longer delay for better reliability
   };
 
   private handleLoadError = () => {
     this.isLoadingAd = false;
     this.isAdLoaded = false;
-    this.rewardedAd = null;
+    
+    // Clean up current ad
+    if (this.rewardedAd) {
+      this.rewardedAd.removeAllListeners();
+      this.rewardedAd = null;
+    }
 
     if (this.retryCount < this.maxRetries) {
       this.retryCount++;
@@ -417,37 +686,51 @@ class RewardedAdManager {
     }
 
     try {
-      // Add one-time event listeners for this show
-      if (onEarnedReward) {
-        const rewardListener = (reward: any) => {
-          console.log('💰 Reward earned in show method:', reward);
-          onEarnedReward(reward);
-          this.rewardedAd?.removeAllListeners();
-        };
-        this.rewardedAd!.addAdEventListener(RewardedAdEventType.EARNED_REWARD, rewardListener);
-      }
+      // Store callbacks for use in event handlers
+      let rewardEarned = false;
 
-      if (onAdClosed) {
-        const closedListener = () => {
-          console.log('📪 Ad closed in show method');
-          onAdClosed();
-          if (this.rewardedAd) {
-            this.rewardedAd.removeAllListeners();
-          }
-        };
-        if (this.rewardedAd) {
-          this.rewardedAd.addAdEventListener(AdEventType.CLOSED, closedListener);
+      // Add one-time event listeners for this specific ad show
+      const rewardListener = (reward: any) => {
+        console.log('💰 Reward earned in show method:', reward);
+        rewardEarned = true;
+        if (onEarnedReward) {
+          onEarnedReward(reward);
         }
+      };
+
+      const closedListener = () => {
+        console.log('📪 Ad closed in show method');
+        
+        // Call user callback first
+        if (onAdClosed) {
+          onAdClosed();
+        }
+
+        // Remove the temporary listeners
+        if (this.rewardedAd) {
+          this.rewardedAd.removeAdEventListener(RewardedAdEventType.EARNED_REWARD, rewardListener);
+          this.rewardedAd.removeAdEventListener(AdEventType.CLOSED, closedListener);
+        }
+
+        console.log(`🎯 Ad session complete. Reward earned: ${rewardEarned}`);
+      };
+
+      // Add temporary listeners for this ad show
+      if (this.rewardedAd) {
+        this.rewardedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, rewardListener);
+        this.rewardedAd.addAdEventListener(AdEventType.CLOSED, closedListener);
       }
 
       await this.rewardedAd!.show();
-      console.log('✅ Rewarded ad show command sent');
+      console.log('✅ Rewarded ad show command sent successfully');
       return true;
 
     } catch (error) {
       console.error('❌ Failed to show rewarded ad:', error);
       this.isShowingAd = false;
-      onAdFailedToShow?.(error);
+      if (onAdFailedToShow) {
+        onAdFailedToShow(error);
+      }
       
       // Try to load a new ad
       if (!this.isLoadingAd) {
@@ -460,10 +743,18 @@ class RewardedAdManager {
   // Method to manually reload ad
   public reloadAd = () => {
     console.log('🔄 Manual ad reload requested');
+    
+    // Clear any pending reload
+    if (this.reloadTimeout) {
+      clearTimeout(this.reloadTimeout);
+      this.reloadTimeout = null;
+    }
+
     if (this.rewardedAd) {
       this.rewardedAd.removeAllListeners();
       this.rewardedAd = null;
     }
+    
     this.isLoadingAd = false;
     this.isAdLoaded = false;
     this.isShowingAd = false;
@@ -486,10 +777,18 @@ class RewardedAdManager {
 
   public destroy = () => {
     console.log('🗑️ Destroying RewardedAdManager');
+    
+    // Clear any pending reload
+    if (this.reloadTimeout) {
+      clearTimeout(this.reloadTimeout);
+      this.reloadTimeout = null;
+    }
+
     if (this.rewardedAd) {
       this.rewardedAd.removeAllListeners();
       this.rewardedAd = null;
     }
+    
     this.isLoadingAd = false;
     this.isAdLoaded = false;
     this.isShowingAd = false;

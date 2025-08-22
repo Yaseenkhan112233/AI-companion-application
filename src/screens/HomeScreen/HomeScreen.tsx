@@ -624,14 +624,82 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
   );
 
   // Update the header to show coins
+  // const renderHeader = () => (
+  //   <LinearGradient
+  //     colors={['#00BFFF', '#FF69B4']}
+  //     start={{ x: 0, y: 0 }}
+  //     end={{ x: 1, y: 0 }}
+  //     style={styles.header}
+  //   >
+  //     <TouchableOpacity style={styles.headerContent} onPress={toggleDrawer}>
+  //       <Image
+  //         source={
+  //           userPreferences &&
+  //           userPreferences.avatar !== undefined &&
+  //           userPreferences.avatar >= 0
+  //             ? getAvatarImage(userPreferences.avatar)
+  //             : avatarImages[0]
+  //         }
+  //         style={styles.avatar}
+  //       />
+  //       <View style={styles.headerTextContainer}>
+  //         <Text style={styles.headerName}>{botName}</Text>
+  //         <Text style={styles.headerStatus}>Active now</Text>
+  //       </View>
+  //     </TouchableOpacity>
+
+  //     <View style={styles.headerRightContainer}>
+  //       {/* Coins Display */}
+  //       <View style={styles.coinsContainer}>
+  //         <Icon name="monetization-on" size={18} color="#FFD700" />
+  //         <Text style={styles.coinsText}>{userCoins.coins}</Text>
+  //         <Text style={styles.messagesLeftText}>
+  //           {userCoins.totalMessages - userCoins.messagesUsed} left
+  //         </Text>
+  //       </View>
+
+  //       <TouchableOpacity style={styles.optionsButton} onPress={toggleMenu}>
+  //         <Icon name="more-vert" size={24} color="#fff" />
+  //       </TouchableOpacity>
+
+  //       {isMenuVisible && (
+  //         <View style={styles.menuDropdown}>
+  //           <TouchableOpacity
+  //             style={styles.menuItem}
+  //             onPress={() => {
+  //               setIsMenuVisible(false);
+  //               clearChatHistory();
+  //             }}
+  //           >
+  //             <Icon
+  //               name="delete"
+  //               size={20}
+  //               color="#555"
+  //               style={styles.menuIcon}
+  //             />
+  //             <Text style={styles.menuText}>Clear Chat</Text>
+  //           </TouchableOpacity>
+
+  //         </View>
+  //       )}
+  //     </View>
+  //   </LinearGradient>
+  // );
   const renderHeader = () => (
-    <LinearGradient
-      colors={['#00BFFF', '#FF69B4']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={styles.header}
-    >
-      <TouchableOpacity style={styles.headerContent} onPress={toggleDrawer}>
+  <LinearGradient
+    colors={['#00BFFF', '#FF69B4']}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 0 }}
+    style={styles.header}
+  >
+    <View style={styles.headerContent}>
+      {/* Menu Icon */}
+      <TouchableOpacity style={styles.menuButton} onPress={toggleDrawer}>
+        <Icon name="menu" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Avatar - separate touchable */}
+      <TouchableOpacity style={styles.avatarButton} onPress={toggleDrawer}>
         <Image
           source={
             userPreferences &&
@@ -642,49 +710,52 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
           }
           style={styles.avatar}
         />
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerName}>{botName}</Text>
-          <Text style={styles.headerStatus}>Active now</Text>
-        </View>
       </TouchableOpacity>
 
-      <View style={styles.headerRightContainer}>
-        {/* Coins Display */}
-        <View style={styles.coinsContainer}>
-          <Icon name="monetization-on" size={18} color="#FFD700" />
-          <Text style={styles.coinsText}>{userCoins.coins}</Text>
-          <Text style={styles.messagesLeftText}>
-            {userCoins.totalMessages - userCoins.messagesUsed} left
-          </Text>
-        </View>
-
-        <TouchableOpacity style={styles.optionsButton} onPress={toggleMenu}>
-          <Icon name="more-vert" size={24} color="#fff" />
-        </TouchableOpacity>
-
-        {isMenuVisible && (
-          <View style={styles.menuDropdown}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                setIsMenuVisible(false);
-                clearChatHistory();
-              }}
-            >
-              <Icon
-                name="delete"
-                size={20}
-                color="#555"
-                style={styles.menuIcon}
-              />
-              <Text style={styles.menuText}>Clear Chat</Text>
-            </TouchableOpacity>
-
-          </View>
-        )}
+      {/* Header Text */}
+      <View style={styles.headerTextContainer}>
+        <Text style={styles.headerName}>{botName}</Text>
+        <Text style={styles.headerStatus}>Active now</Text>
       </View>
-    </LinearGradient>
-  );
+    </View>
+
+    <View style={styles.headerRightContainer}>
+      {/* Coins Display */}
+      <View style={styles.coinsContainer}>
+        <Icon name="monetization-on" size={18} color="#FFD700" />
+        <Text style={styles.coinsText}>{userCoins.coins}</Text>
+        <Text style={styles.messagesLeftText}>
+          {userCoins.totalMessages - userCoins.messagesUsed} left
+        </Text>
+      </View>
+
+      <TouchableOpacity style={styles.optionsButton} onPress={toggleMenu}>
+        <Icon name="more-vert" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      {isMenuVisible && (
+        <View style={styles.menuDropdown}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+              setIsMenuVisible(false);
+              clearChatHistory();
+            }}
+          >
+            <Icon
+              name="delete"
+              size={20}
+              color="#555"
+              style={styles.menuIcon}
+            />
+            <Text style={styles.menuText}>Clear Chat</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  </LinearGradient>
+);
+
 
   const mainContent = (
     <SafeAreaView style={styles.container}>
@@ -722,7 +793,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
               placeholder={
                 canSendMessage() 
                   ? "Type your message..."
-                  : "Press On Send Icon To Earn coins ->"
+                  : "Type your message..."
               }
               placeholderTextColor="#999"
               value={message}
@@ -849,14 +920,37 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+
+  
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+  },
+  menuButton: {
+    padding: 2,
+    marginRight: 12,
+    // borderRadius: 20,
+    // Optional: add background for better visibility
+    // backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  avatarButton: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  headerTextContainer: {
+    flex: 1,
   },
   headerRightContainer: {
     flexDirection: 'row',
@@ -894,21 +988,21 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
+  // avatar: {
+  //   width: 40,
+  //   height: 40,
+  //   borderRadius: 20,
+  //   borderWidth: 2,
+  //   borderColor: '#fff',
+  // },
   avatarSmall: {
     width: 30,
     height: 30,
     borderRadius: 15,
   },
-  headerTextContainer: {
-    marginLeft: spacing.md,
-  },
+  // headerTextContainer: {
+  //   marginLeft: spacing.md,
+  // },
   headerName: {
     fontSize: 18,
     fontWeight: 'bold',
